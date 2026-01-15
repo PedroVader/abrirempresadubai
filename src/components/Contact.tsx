@@ -14,6 +14,8 @@ import {
   Send,
   MessageCircle
 } from "lucide-react";
+// Añadir este import arriba con los demás
+import { sendLeadToAirtable } from "@/lib/airtableService";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -48,28 +50,31 @@ const Contact = () => {
       });
       return;
     }
-
+  
     setIsLoading(true);
-    console.log('🚀 Calling edge function...');
-
+    console.log('🚀 Sending lead...');
+  
     try {
+      // Enviar a Supabase
       const { data, error } = await supabase.functions.invoke('send-lead-notification', {
         body: formData
       });
-
-      console.log('📡 Edge function response:', { data, error });
-
+  
       if (error) {
-        console.error('❌ Edge function error:', error);
+        console.error('❌ Supabase error:', error);
         throw error;
       }
-
-      console.log('✅ Lead sent successfully');
+  
+      // Enviar a Airtable
+      console.log('📊 Sending to Airtable...');
+      await sendLeadToAirtable(formData);
+      console.log('✅ Airtable: Lead saved');
+  
       toast({
         title: "¡Consulta enviada!",
         description: "Hemos recibido tu consulta. Te contactaremos en menos de 24 horas.",
       });
-
+  
       // Reset form
       setFormData({
         name: '',
@@ -79,7 +84,7 @@ const Contact = () => {
         business: '',
         message: ''
       });
-
+  
     } catch (error: any) {
       console.error('❌ Error sending lead:', error);
       toast({
